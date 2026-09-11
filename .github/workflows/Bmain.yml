@@ -19,20 +19,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Create local.properties & Debug Keystore
+      - name: Create Dummy Secrets & Debug Keystore
         run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "apiKey=dummy_key_for_build" >> local.properties
+          # Create dummy .env for Secrets Gradle Plugin
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            echo "API_KEY=dummy_key" > .env
+          fi
           
+          # Generate Debug Keystore as expected by app/build.gradle.kts
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          mkdir -p app
-          cp debug.keystore app/debug.keystore 2>/dev/null || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info
